@@ -1,0 +1,22 @@
+
+# Environment variables
+.env
+.env*.local
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+backend/venv/
+venv/
+*.db
+*.sqlite
+*.sqlite3
+
+# Common ignores
+node_modules/
+.next/
+out/
+dist/
+tsconfig.tsbuildinfo
+.DS_Store
