@@ -36,6 +36,31 @@ interface TelemetryData {
   location: string
 }
 
+interface RiskAssessment {
+  risk_score: number
+  risk_level: string
+  flash_flood_probability: number
+  rainfall_score: number
+  humidity_score: number
+  wind_score: number
+  temperature_score: number
+  trend_multiplier: number
+  affected_areas: string[]
+  recommended_action: string
+  timestamp: string
+}
+
+interface DashboardSummary {
+  locations: Array<{
+    name: string
+    risk_level: string
+    risk_score: number
+  }>
+  overall_risk: string
+  timestamp: string
+  critical_alerts: number
+}
+
 interface AlertLog {
   id: number
   alert_type: string
@@ -46,7 +71,9 @@ interface AlertLog {
 
 export default function Dashboard() {
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null)
+  const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null)
   const [alertLogs, setAlertLogs] = useState<AlertLog[]>([])
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastFetch, setLastFetch] = useState<Date | null>(null)
@@ -55,54 +82,90 @@ export default function Dashboard() {
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
 
-  // Fetch telemetry data
-  const fetchTelemetry = useCallback(async () => {
+  // Fetch weather and risk data for selected location
+  const fetchLocationData = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${apiBaseUrl}/api/v1/telemetry`, {
-        timeout: 5000,
-      })
-      setTelemetry(response.data)
       setError(null)
+      
+      // Fetch risk assessment and weather data in parallel
+      const [riskRes, weatherRes] = await Promise.all([
+        axios.get(`${apiBaseUrl}/api/risk/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
+        axios.get(`${apiBaseUrl}/api/weather/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
+      ])
+      
+      const riskData = riskRes.data.risk_assessment
+      const weatherData = weatherRes.data.data?.[0] || weatherRes.data
+      
+      if (riskData) {
+        setRiskAssessment(riskData)
+        // Convert risk assessment to telemetry format for compatibility
+        setTelemetry({
+          temperature: weatherData.temperature ?? 25,
+          precipitation: weatherData.rainfall ?? 0,
+          cloud_density: weatherData.humidity ?? 0,
+          wind_speed: weatherData.wind_speed ?? 0,
+          humidity: weatherData.humidity ?? 0,
+          risk_level: riskData.risk_level,
+          timestamp: riskData.timestamp,
+          location: selectedLocation,
+        })
+      }
+      
       setLastFetch(new Date())
     } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to fetch telemetry'
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to fetch location data'
       setError(errorMsg)
     } finally {
       setLoading(false)
     }
-  }, [apiBaseUrl])
+  }, [apiBaseUrl, selectedLocation])
 
   // Fetch alert logs
   const fetchAlertLogs = useCallback(async () => {
     try {
-      const response = await axios.get(`${apiBaseUrl}/api/v1/logs`, {
+      const response = await axios.get(`${apiBaseUrl}/api/sms/alerts`, {
         timeout: 5000,
       })
-      setAlertLogs(response.data.logs || [])
+      setAlertLogs(response.data.alerts || [])
     } catch (err: any) {
       console.error('Failed to fetch alert logs:', err)
     }
   }, [apiBaseUrl])
 
+  // Fetch dashboard summary
+  const fetchDashboardSummary = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiBaseUrl}/api/dashboard/summary`, {
+        timeout: 5000,
+      })
+      setDashboardSummary(response.data)
+    } catch (err: any) {
+      console.error('Failed to fetch dashboard summary:', err)
+    }
+  }, [apiBaseUrl])
+
   // Initial fetch
   useEffect(() => {
-    fetchTelemetry()
+    fetchLocationData()
     fetchAlertLogs()
-  }, [fetchTelemetry, fetchAlertLogs])
+    fetchDashboardSummary()
+  }, [fetchLocationData, fetchAlertLogs, fetchDashboardSummary])
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchTelemetry()
+      fetchLocationData()
       fetchAlertLogs()
+      fetchDashboardSummary()
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [fetchTelemetry, fetchAlertLogs])
+  }, [fetchLocationData, fetchAlertLogs, fetchDashboardSummary])
 
   const handleAlertSimulated = () => {
     fetchAlertLogs()
+    fetchDashboardSummary()
   }
 
   const getRiskPercentage = (level: string): number => {
@@ -111,6 +174,8 @@ export default function Dashboard() {
         return 85
       case 'HIGH':
         return 65
+      case 'VERY_HIGH':
+        return 75
       case 'MODERATE':
         return 42
       case 'LOW':
@@ -144,7 +209,7 @@ export default function Dashboard() {
                 English
               </div>
               <button
-                onClick={fetchTelemetry}
+                onClick={fetchLocationData}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg transition-colors font-medium"
               >
@@ -194,14 +259,16 @@ export default function Dashboard() {
           {/* Right: Overall Risk Level and Alerts */}
           <div className="space-y-6">
             {/* Risk Score Card */}
-            {telemetry && (
+            {dashboardSummary && (
               <div className="bg-white rounded-lg border-l-4 border-l-blue-500 border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-slate-600">Overall Risk Level</h3>
                   <Activity className="w-4 h-4 text-slate-400" />
                 </div>
-                <div className="text-4xl font-bold text-orange-600 mb-1">MODERATE</div>
-                <p className="text-sm text-slate-600">2 critical alerts active</p>
+                <div className={`text-4xl font-bold mb-1 ${dashboardSummary.overall_risk === 'CRITICAL' || dashboardSummary.overall_risk === 'VERY_HIGH' ? 'text-red-600' : dashboardSummary.overall_risk === 'HIGH' ? 'text-orange-600' : dashboardSummary.overall_risk === 'MODERATE' ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {dashboardSummary.overall_risk}
+                </div>
+                <p className="text-sm text-slate-600">{dashboardSummary.critical_alerts} critical alerts active</p>
               </div>
             )}
 
@@ -216,10 +283,31 @@ export default function Dashboard() {
                   Refresh
                 </button>
               </div>
-              <div className="text-center py-8 text-slate-500">
-                <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No active alerts</p>
-              </div>
+              {alertLogs.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No active alerts</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {alertLogs.slice(0, 5).map((alert) => (
+                    <div key={alert.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-900">{alert.location || 'Unknown'}</span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          alert.risk_level === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                          alert.risk_level === 'HIGH' || alert.risk_level === 'VERY_HIGH' ? 'bg-orange-100 text-orange-700' :
+                          alert.risk_level === 'MODERATE' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {alert.risk_level}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{alert.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <button className="w-full mt-4 text-center text-blue-600 hover:text-blue-700 text-sm font-medium py-2 border-t border-slate-100">
                 Load More
               </button>
@@ -270,7 +358,7 @@ export default function Dashboard() {
         </div>
 
         {/* Weather Metrics Section */}
-        {telemetry && (
+        {telemetry && riskAssessment && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -288,18 +376,49 @@ export default function Dashboard() {
                   <Cloud className="w-5 h-5 text-blue-600" />
                   <h4 className="font-semibold text-slate-900">Risk Score</h4>
                 </div>
-                <div className="text-4xl font-bold text-orange-600 mb-2">42.0%</div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
-                  <div className="bg-orange-500 h-2 rounded-full" style={{ width: '42%' }}></div>
+                <div className={`text-4xl font-bold mb-2 ${
+                  riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600' :
+                  riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500' :
+                  riskAssessment.risk_level === 'HIGH' ? 'text-orange-600' :
+                  riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600' :
+                  'text-green-600'
+                }`}>
+                  {(riskAssessment.risk_score * 100).toFixed(1)}%
                 </div>
-                <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold text-orange-600 bg-orange-50">
-                  MODERATE
+                <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      riskAssessment.risk_level === 'CRITICAL' ? 'bg-red-500' :
+                      riskAssessment.risk_level === 'VERY_HIGH' ? 'bg-red-400' :
+                      riskAssessment.risk_level === 'HIGH' ? 'bg-orange-500' :
+                      riskAssessment.risk_level === 'MODERATE' ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    }`}
+                    style={{ width: `${(riskAssessment.risk_score * 100)}%` }}
+                  ></div>
+                </div>
+                <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                  riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600 bg-red-50' :
+                  riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500 bg-red-50' :
+                  riskAssessment.risk_level === 'HIGH' ? 'text-orange-600 bg-orange-50' :
+                  riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600 bg-yellow-50' :
+                  'text-green-600 bg-green-50'
+                }`}>
+                  {riskAssessment.risk_level}
                 </div>
               </div>
 
-              {/* Affected Areas */}
+              {/* Affected Areas from Risk Assessment */}
               <div>
-                <AffectedAreasList location={selectedLocation} />
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">Affected Areas</h4>
+                <div className="space-y-2">
+                  {riskAssessment.affected_areas.map((area, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+                      <span className="text-sm text-slate-700">{area}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Weather Summary */}
@@ -317,6 +436,10 @@ export default function Dashboard() {
                   <div>
                     <span className="text-slate-600">Humidity:</span>
                     <span className="font-medium ml-2">{telemetry.humidity.toFixed(0)}%</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Wind Speed:</span>
+                    <span className="font-medium ml-2">{telemetry.wind_speed.toFixed(1)} km/h</span>
                   </div>
                 </div>
               </div>
@@ -355,10 +478,10 @@ export default function Dashboard() {
               />
             </motion.div>
 
-            {/* Warning Banner */}
+            {/* Warning Banner from Risk Assessment */}
             <WarningBanner
-              message="Monitor weather conditions closely. Risk levels may change based on incoming rainfall."
-              type="warning"
+              message={riskAssessment.recommended_action}
+              type={riskAssessment.risk_level === 'CRITICAL' || riskAssessment.risk_level === 'VERY_HIGH' ? 'alert' : riskAssessment.risk_level === 'HIGH' ? 'warning' : 'info'}
             />
           </motion.div>
         )}
@@ -374,7 +497,7 @@ export default function Dashboard() {
         {/* Refresh Button */}
         <div className="text-center mb-12">
           <button
-            onClick={fetchTelemetry}
+            onClick={fetchLocationData}
             disabled={loading}
             className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 mx-auto"
           >
@@ -384,7 +507,7 @@ export default function Dashboard() {
         </div>
 
         {/* Swahili Message */}
-        {telemetry && (
+        {telemetry && riskAssessment && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -396,14 +519,18 @@ export default function Dashboard() {
             </h3>
             <div className="text-green-800">
               <p className="mb-2">
-                {telemetry.risk_level === 'CRITICAL'
+                {riskAssessment.risk_level === 'CRITICAL'
                   ? '⚠️ ONYO MKUBWA: Hali ya maji ni hatari sana. Jua maji yenyewe katika nyumba yako na ujihadari.'
-                  : telemetry.risk_level === 'MODERATE'
-                    ? '⚠️ ONYO: Hakuna kulingana. Kuwa na ujihadari kwa sababu ya mvua inayoweza kuwa na hatari.'
-                    : '✅ SALAMA: Hali ya maji ni salama kwa sasa. Endelea kusoma habari za sasa.'}
+                  : riskAssessment.risk_level === 'VERY_HIGH'
+                    ? '⚠️ ONYO MKUBWA: Hali ya maji ni hatari sana. Hamia salama mara moja.'
+                    : riskAssessment.risk_level === 'HIGH'
+                      ? '⚠️ ONYO: Hakuna kulingana. Kuwa na ujihadari kwa sababu ya mvua inayoweza kuwa na hatari.'
+                      : riskAssessment.risk_level === 'MODERATE'
+                        ? '⚠️ ONYO: Kuwa makini. Mvua inaweza kusababisha maafa.'
+                        : '✅ SALAMA: Hali ya maji ni salama kwa sasa. Endelea kusoma habari za sasa.'}
               </p>
               <p className="text-sm text-slate-600">
-                Sasa: {new Date(telemetry.timestamp).toLocaleString('sw-KE')}
+                Sasa: {new Date(riskAssessment.timestamp).toLocaleString('sw-KE')}
               </p>
             </div>
           </motion.div>

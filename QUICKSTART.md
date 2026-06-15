@@ -49,94 +49,75 @@ pnpm dev
 
 ### 5. Test the App
 
-1. Open http://localhost:3000
-2. Click **Refresh** to fetch weather data
-3. Click **SMS** tab and send a test alert
-4. View alerts in the **Alert Log** panel
+1. Open `http://localhost:3000`
+2. Navigate to the dashboard.
+3. The dashboard should automatically fetch weather data and display risk.
+4. To submit new weather data, use the `/api/weather` POST endpoint (e.g., via `curl` or FastAPI's `/docs`).
+5. To create an SMS alert, use the `/api/sms-alert` POST endpoint.
+6. To view SMS alerts, use the `/api/sms-alerts` GET endpoint.
 
 Done! 🎉
 
 ---
 
-## Production Deployment (15 minutes)
+## API Endpoints Reference (Updated)
 
-### Step 1: Push to GitHub
-
+### Weather & Risk
 ```bash
-git add .
-git commit -m "Ready for deployment"
-git push origin main
-```
-
-### Step 2: Deploy Backend to Railway (5 min)
-
-1. Go to [railway.app](https://railway.app)
-2. Click **New Project** → **Deploy from GitHub**
-3. Select your repository
-4. Add environment variables:
-   ```
-   WEATHER_AI_ENDPOINT=your-api-endpoint
-   WEATHER_AI_KEY=your-api-key
-   DATABASE_PATH=/data/aquashield.db
-   FRONTEND_URL=https://your-vercel-url.vercel.app
-   ```
-5. Click Deploy
-6. Copy your Railway URL (e.g., `https://app.railway.app`)
-
-### Step 3: Deploy Frontend to Vercel (5 min)
-
-1. Go to [vercel.com](https://vercel.com)
-2. Click **Add New** → **Project**
-3. Select your repository
-4. Add environment variable:
-   ```
-   NEXT_PUBLIC_API_BASE_URL=https://your-railway-url
-   ```
-5. Click Deploy
-
-### Step 4: Update Backend CORS
-
-1. Go back to Railway dashboard
-2. Update `FRONTEND_URL` to your Vercel URL
-3. Save and redeploy
-
-✅ Your app is live!
-
----
-
-## API Endpoints Reference
-
-### Telemetry
-```bash
-# Get current weather and risk level
-curl http://localhost:8000/api/v1/telemetry
-
-# Get historical data
-curl http://localhost:8000/api/v1/telemetry/history?limit=10
-```
-
-### Alerts
-```bash
-# Send SMS alert
-curl -X POST http://localhost:8000/api/v1/sms/simulate \
+# Submit new weather data
+curl -X POST http://localhost:8000/api/weather \
   -H "Content-Type: application/json" \
   -d '{
-    "phone_number": "+254123456789",
-    "message": "Maji yanazidi!"
+    "location": "Kajiado Central",
+    "temperature": 22.5,
+    "humidity": 75,
+    "rainfall": 45.2,
+    "wind_speed": 35.5,
+    "weather_condition": "Rainy"
   }'
 
-# Send webhook alert
-curl -X POST http://localhost:8000/api/v1/webhook/simulate \
+# Get latest weather data for a location
+curl http://localhost:8000/api/weather/Kajiado%20Central
+
+# Get latest risk assessment for a location
+curl http://localhost:8000/api/risk/Kajiado%20Central
+
+# Simulate fetching weather from external API (and process)
+curl -X POST http://localhost:8000/api/weather/fetch \
   -H "Content-Type: application/json" \
   -d '{
-    "payload": {
-      "event": "flood_alert",
-      "severity": "critical"
-    }
+    "location": "Kajiado Central"
+  }'
+```
+
+### SMS Alerts
+```bash
+# Create an SMS alert
+curl -X POST http://localhost:8000/api/sms-alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipient": "+254712345678",
+    "message": "Flash flood alert: Evacuate immediately from low-lying areas",
+    "location": "Kajiado Central",
+    "risk_level": "CRITICAL"
   }'
 
-# Get all alert logs
-curl http://localhost:8000/api/v1/logs
+# Get all SMS alerts
+curl http://localhost:8000/api/sms-alerts
+
+# Update SMS alert status
+curl -X POST http://localhost:8000/api/sms-alert/1/status \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alert_id": 1,
+    "status": "sent"
+  }'
+```
+
+### Dashboard
+```bash
+# Get overall dashboard summary
+curl http://localhost:8000/api/dashboard/summary
 ```
 
 ### Health
@@ -144,26 +125,9 @@ curl http://localhost:8000/api/v1/logs
 curl http://localhost:8000/health
 ```
 
----
-
-## Swahili Messages
-
-### Critical Risk
-```
-🚨 ONYO MKUBWA: Hali ya maji ni hatari sana. 
-Jua maji yenyewe katika nyumba yako na ujihadari.
-```
-
-### Moderate Risk
-```
-⚠️ ONYO: Hakuna kulingana. Kuwa na ujihadari 
-kwa sababu ya mvua inayoweza kuwa na hatari.
-```
-
-### Low Risk
-```
-✅ SALAMA: Hali ya maji ni salama kwa sasa. 
-Endelea kusoma habari za sasa.
+### Interactive API Docs
+```bash
+curl http://localhost:8000/docs
 ```
 
 ---
@@ -171,13 +135,13 @@ Endelea kusoma habari za sasa.
 ## Environment Variables Checklist
 
 ### Frontend (.env.local)
-- [ ] `NEXT_PUBLIC_API_BASE_URL` set to backend URL
+- [ ] `NEXT_PUBLIC_API_BASE_URL` set to backend URL (e.g., `http://localhost:8000` for local, `https://your-railway-app.railway.app` for production)
 
 ### Backend (.env)
-- [ ] `WEATHER_AI_ENDPOINT` set to actual API endpoint
-- [ ] `WEATHER_AI_KEY` set to your API key
-- [ ] `DATABASE_PATH` set to writable location
-- [ ] `FRONTEND_URL` set to frontend URL (production)
+- [ ] `WEATHER_API_ENDPOINT` set to actual API endpoint (e.g., `https://api.weather-ai.example.com/data`)
+- [ ] `WEATHER_API_KEY` set to your API key
+- [ ] `DATABASE_PATH` set to writable location (e.g., `/data/aquashield.db`)
+- [ ] `FRONTEND_URL` set to frontend URL (e.g., `http://localhost:3000` for local, `https://your-vercel-app.vercel.app` for production)
 
 ---
 
@@ -185,11 +149,11 @@ Endelea kusoma habari za sasa.
 
 | Issue | Solution |
 |-------|----------|
-| CORS Error | Check `NEXT_PUBLIC_API_BASE_URL` in frontend is correct |
-| API not responding | Verify `WEATHER_AI_ENDPOINT` and `WEATHER_AI_KEY` in backend |
-| Alerts not saving | Check `DATABASE_PATH` is writable |
-| Blank frontend page | Check browser console and Vercel logs |
-| Auto-refresh not working | Verify backend URL is accessible from frontend |
+| CORS Error | Check `NEXT_PUBLIC_API_BASE_URL` in frontend is correct and `FRONTEND_URL` in backend is correct. |
+| API not responding | Verify backend is running and check `WEATHER_API_ENDPOINT` and `WEATHER_API_KEY` in backend. |
+| Alerts not saving | Check `DATABASE_PATH` is writable and database initialization was successful. |
+| Blank frontend page | Check browser console and Vercel logs. |
+| Auto-refresh not working | Verify backend URL is accessible from frontend. |
 
 ---
 
@@ -200,9 +164,19 @@ kajiado-aquashield/
 ├── app/                    # Next.js pages
 ├── components/             # React components
 ├── backend/                # FastAPI server
-│   ├── app/main.py        # Main API
-│   ├── requirements.txt    # Dependencies
-│   └── .env               # Environment config
+│   ├── app/                # FastAPI application modules
+│   │   ├── main.py         # Main API entry point
+│   │   ├── database.py     # Database operations
+│   │   ├── risk_engine.py  # Risk calculation logic
+│   │   ├── schemas.py      # Pydantic models
+│   │   ├── weather.py      # Weather API routes
+│   │   ├── risk.py         # Risk API routes
+│   │   ├── alerts.py       # SMS alerts API routes
+│   │   └── dashboard.py    # Dashboard API routes
+│   ├── requirements.txt    # Python dependencies
+│   ├── Procfile            # Railway deployment config
+│   ├── .env                # Environment config
+│   └── initialize_db.py    # Script to manually initialize DB
 ├── .env.local             # Frontend env (local)
 ├── vercel.json            # Vercel config
 ├── railway.json           # Railway config

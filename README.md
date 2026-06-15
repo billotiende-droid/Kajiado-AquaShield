@@ -103,7 +103,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 The backend will be available at `http://localhost:8000`
 API docs at `http://localhost:8000/docs`
 
-#### 4. Start the Frontend (in a new terminal)
+#### 4. Start the Frontend (in a new terminal, if applicable)
 
 ```bash
 pnpm run dev

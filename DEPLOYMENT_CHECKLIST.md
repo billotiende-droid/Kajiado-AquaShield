@@ -18,12 +18,13 @@ Complete this checklist to ensure your application is properly deployed and conf
   Expected: App loads at `http://localhost:3000`
 
 - [ ] **API connectivity**
-  - [ ] Frontend can fetch telemetry (click Refresh, see weather data)
-  - [ ] SMS alert simulation works (sends and shows in log)
-  - [ ] Webhook alert simulation works (sends and shows in log)
+
+  - [ ] Frontend can fetch weather data (dashboard loads)
+  - [ ] SMS alert creation works (via `/api/sms-alert`)
+  - [ ] SMS alerts can be listed (via `/api/sms-alerts`)
 
 - [ ] **Environment variables**
-  - [ ] `.env.local` exists with `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
+  - [ ] `.env.local` exists with `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000` (or the correct local backend URL)
   - [ ] `backend/.env` exists with Weather-AI credentials
   - [ ] All required vars set (see `.env.example` files)
 
@@ -69,7 +70,7 @@ Complete this checklist to ensure your application is properly deployed and conf
 
 - [ ] **Environment variables set in Railway**
   - [ ] `WEATHER_AI_ENDPOINT` = your Weather-AI API endpoint
-  - [ ] `WEATHER_AI_KEY` = your Weather-AI API key
+  - [ ] `WEATHER_API_KEY` = your Weather-AI API key
   - [ ] `DATABASE_PATH` = `/data/aquashield.db`
   - [ ] `FRONTEND_URL` = (leave blank for now, will update after Vercel)
 
@@ -118,13 +119,12 @@ Complete this checklist to ensure your application is properly deployed and conf
 - [ ] **Frontend → Backend connectivity**
   - [ ] Open Vercel URL
   - [ ] Dashboard loads weather data
-  - [ ] No CORS errors in browser console
-  - [ ] Auto-refresh works (data updates every 30 seconds)
+  - [ ] No CORS errors in browser console (check DevTools)
+  - [ ] Auto-refresh works (data updates periodically)
 
-- [ ] **Alert simulation in production**
-  - [ ] Send SMS alert - appears in log
-  - [ ] Send webhook alert - appears in log
-  - [ ] JSON formatting correct in both
+- [ ] **Alerts in production**
+  - [ ] Create SMS alert via API - appears in `/api/sms-alerts`
+  - [ ] Update SMS alert status via API
 
 - [ ] **Swahili content displays**
   - [ ] Water safety message shows in Swahili
@@ -190,7 +190,7 @@ If Option B or C:
 
 - [ ] **API keys secure**
   - [ ] Weather-AI key only in Railway env vars (NOT in code)
-  - [ ] No credentials in GitHub commits
+  - [ ] No sensitive credentials in GitHub commits
   - [ ] `.env.example` has placeholders, not actual keys
 
 - [ ] **CORS configured**
@@ -213,10 +213,9 @@ Before considering deployment complete:
 - [ ] Visit frontend URL and test all features:
   - [ ] Dashboard loads
   - [ ] Weather data displays
-  - [ ] Risk indicator works
-  - [ ] SMS alert simulation works
-  - [ ] Webhook alert simulation works
-  - [ ] Alert log displays correctly
+  - [ ] Risk indicator works (based on fetched data)
+  - [ ] SMS alert creation works (via API)
+  - [ ] SMS alerts display correctly (via API)
   - [ ] Auto-refresh works (30-second interval)
   - [ ] Manual refresh works
   - [ ] Swahili messages display correctly

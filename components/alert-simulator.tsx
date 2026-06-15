@@ -42,9 +42,11 @@ export default function AlertSimulator({
 
     try {
       setLoading(true)
-      await axios.post(`${apiBaseUrl}/api/v1/sms/simulate`, {
+      await axios.post(`${apiBaseUrl}/api/sms/alert`, {
+        recipient: smsPhone,
         message: smsMessage,
-        phone_number: smsPhone,
+        location: 'Kajiado Central',
+        risk_level: 'HIGH',
       })
       setMessage({ type: 'success', text: 'SMS alert simulated successfully!' })
       setSmsMessage('🚨 ONYO: Maji yanazidi kwa Kajiado. Jua mafuta yako na utulie.')
@@ -75,8 +77,11 @@ export default function AlertSimulator({
         return
       }
 
-      await axios.post(`${apiBaseUrl}/api/v1/webhook/simulate`, {
-        payload,
+      await axios.post(`${apiBaseUrl}/api/sms/alert`, {
+        ...payload,
+        recipient: payload.recipient || 'webhook',
+        location: payload.location || 'Kajiado Central',
+        risk_level: payload.risk_level || 'HIGH',
       })
       setMessage({ type: 'success', text: 'Webhook alert simulated successfully!' })
       setWebhookPayload(
