@@ -1,13 +1,9 @@
-"""
-Kajiado AquaShield API - Production Ready
-FastAPI service for telemetry ingestion and alert simulation.
-"""
 import os
 import sqlite3
 import json
 from datetime import datetime
-from typing import Optional, Dict, Any
-from contextlib import contextmanager
+from typing import Optional, Dict, Any, AsyncGenerator
+from contextlib import contextmanager, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,27 +15,34 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FastAPI app
-app = FastAPI(
-    title="Kajiado AquaShield API",
-    description="Weather monitoring and alert system for Kajiado region",
-    version="1.0.0"
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Configuration
 WEATHER_AI_ENDPOINT = os.getenv("WEATHER_AI_ENDPOINT", "https://api.weather-ai.example.com/v1/current")
 WEATHER_AI_KEY = os.getenv("WEATHER_AI_KEY", "your-api-key-here")
 DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/aquashield.db")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Initialize database and resources on startup."""
+    init_database()
+    logger.info("Database initialized")
+    yield
+
+# FastAPI app
+app = FastAPI(
+    title="Kajiado AquaShield API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_URL, "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Request/Response Models
 class TelemetryResponse(BaseModel):
@@ -152,12 +155,6 @@ def get_mock_weather_data() -> Dict[str, Any]:
     }
 
 # API Endpoints
-
-@app.on_event("startup")
-async def startup():
-    """Initialize database on startup."""
-    init_database()
-    logger.info("Database initialized")
 
 @app.get("/health")
 async def health_check():
