@@ -14,12 +14,12 @@ import {
   MessageSquare,
   Activity,
   Droplet,
+  MapPin,
 } from 'lucide-react'
 import TelemetryCard from './telemetry-card'
 import AlertSimulator from './alert-simulator'
 import AlertConsole from './alert-console'
 import { RiskAssessmentMap } from './risk-assessment-map'
-import { LocationSelector } from './location-selector'
 import { AffectedAreasList } from './affected-areas-list'
 import { RiskScoreDisplay } from './risk-score-display'
 import { WarningBanner } from './warning-banner'
@@ -67,6 +67,9 @@ interface AlertLog {
   content: Record<string, any>
   timestamp: string
   status: string
+  location?: string
+  risk_level?: string
+  message?: string
 }
 
 export default function Dashboard() {
@@ -186,7 +189,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -221,11 +224,11 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Title */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">AquaShield Emergency Operations Dashboard</h2>
-          <p className="text-slate-600">Real-time Flash-Flood Risk Assessment - Kajiado County, Kenya</p>
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
+        {/* Page Title - compact */}
+        <div className="mb-3">
+          <h2 className="text-xl font-bold text-slate-900 mb-1">AquaShield Emergency Operations Dashboard</h2>
+          <p className="text-sm text-slate-600">Real-time Flash-Flood Risk Assessment - Kajiado County, Kenya</p>
         </div>
 
         {/* Error Banner */}
@@ -233,7 +236,7 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
+            className="mb-3"
           >
             <WarningBanner
               message={`Error Loading Data: ${error}`}
@@ -242,59 +245,59 @@ export default function Dashboard() {
           </motion.div>
         )}
 
-        {/* Risk Assessment Map and Overall Risk */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Left: Risk Assessment Map */}
-          <div className="lg:col-span-2">
+        {/* Main Grid: Risk Map + Right Panel (Risk + Alerts + Weather) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+          {/* Left: Risk Assessment Map - reduced height */}
+          <div className="lg:col-span-2 min-h-0">
             {telemetry ? (
               <RiskAssessmentMap
                 selectedLocation={selectedLocation}
                 onLocationSelect={setSelectedLocation}
               />
             ) : (
-              <div className="h-96 bg-slate-100 rounded-lg animate-pulse"></div>
+              <div className="h-60 bg-slate-100 rounded-lg animate-pulse"></div>
             )}
           </div>
 
-          {/* Right: Overall Risk Level and Alerts */}
-          <div className="space-y-6">
-            {/* Risk Score Card */}
+          {/* Right: Combined Risk + Alerts + Weather Metrics */}
+          <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-220px)] pr-2">
+            {/* Overall Risk Level */}
             {dashboardSummary && (
-              <div className="bg-white rounded-lg border-l-4 border-l-blue-500 border border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-slate-600">Overall Risk Level</h3>
-                  <Activity className="w-4 h-4 text-slate-400" />
+              <div className="bg-white rounded-lg border-l-4 border-l-blue-500 border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-xs font-semibold text-slate-600">Overall Risk Level</h3>
+                  <Activity className="w-3 h-3 text-slate-400" />
                 </div>
-                <div className={`text-4xl font-bold mb-1 ${dashboardSummary.overall_risk === 'CRITICAL' || dashboardSummary.overall_risk === 'VERY_HIGH' ? 'text-red-600' : dashboardSummary.overall_risk === 'HIGH' ? 'text-orange-600' : dashboardSummary.overall_risk === 'MODERATE' ? 'text-yellow-600' : 'text-green-600'}`}>
+                <div className={`text-2xl font-bold mb-0.5 ${dashboardSummary.overall_risk === 'CRITICAL' || dashboardSummary.overall_risk === 'VERY_HIGH' ? 'text-red-600' : dashboardSummary.overall_risk === 'HIGH' ? 'text-orange-600' : dashboardSummary.overall_risk === 'MODERATE' ? 'text-yellow-600' : 'text-green-600'}`}>
                   {dashboardSummary.overall_risk}
                 </div>
-                <p className="text-sm text-slate-600">{dashboardSummary.critical_alerts} critical alerts active</p>
+                <p className="text-[10px] text-slate-600">{dashboardSummary.critical_alerts} critical alerts active</p>
               </div>
             )}
 
             {/* Active Alerts */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-slate-900">Active Alerts</h3>
+            <div className="bg-white rounded-lg border border-slate-200 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-slate-900">Active Alerts</h3>
                 <button
                   onClick={fetchAlertLogs}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Refresh
                 </button>
               </div>
               {alertLogs.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No active alerts</p>
+                <div className="text-center py-4 text-slate-500">
+                  <AlertTriangle className="w-5 h-5 mx-auto mb-1 opacity-30" />
+                  <p className="text-xs">No active alerts</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {alertLogs.slice(0, 5).map((alert) => (
-                    <div key={alert.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {alertLogs.slice(0, 3).map((alert) => (
+                    <div key={alert.id} className="p-1.5 bg-slate-50 rounded border border-slate-200">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-900">{alert.location || 'Unknown'}</span>
-                        <span className={`text-xs px-2 py-1 rounded ${
+                        <span className="text-xs font-medium text-slate-900">{alert.location || 'Unknown'}</span>
+                        <span className={`text-[9px] px-1 py-0.5 rounded ${
                           alert.risk_level === 'CRITICAL' ? 'bg-red-100 text-red-700' :
                           alert.risk_level === 'HIGH' || alert.risk_level === 'VERY_HIGH' ? 'bg-orange-100 text-orange-700' :
                           alert.risk_level === 'MODERATE' ? 'bg-yellow-100 text-yellow-700' :
@@ -303,254 +306,172 @@ export default function Dashboard() {
                           {alert.risk_level}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-600 mt-1">{alert.message}</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5 line-clamp-1">{alert.message}</p>
                     </div>
                   ))}
                 </div>
               )}
-              <button className="w-full mt-4 text-center text-blue-600 hover:text-blue-700 text-sm font-medium py-2 border-t border-slate-100">
-                Load More
-              </button>
             </div>
 
-            {/* SMS Simulation Panel */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                SMS Simulation Panel
+            {/* Weather & Risk Metrics (moved up) */}
+            {telemetry && riskAssessment && (
+              <div className="bg-white rounded-lg border border-slate-200 p-3">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{selectedLocation} - Weather & Risk Metrics</h3>
+                
+                {/* Risk Score + Weather in 2-col grid */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {/* Risk Score */}
+                  <div className="bg-slate-50 rounded-lg p-2">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Cloud className="w-3 h-3 text-blue-600" />
+                      <h4 className="text-[10px] font-semibold text-slate-700">Risk Score</h4>
+                    </div>
+                    <div className={`text-xl font-bold ${riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600' : riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500' : riskAssessment.risk_level === 'HIGH' ? 'text-orange-600' : riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {(riskAssessment.risk_score * 100).toFixed(1)}%
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-1 mt-1">
+                      <div 
+                        className={`h-1 rounded-full ${riskAssessment.risk_level === 'CRITICAL' ? 'bg-red-500' : riskAssessment.risk_level === 'VERY_HIGH' ? 'bg-red-400' : riskAssessment.risk_level === 'HIGH' ? 'bg-orange-500' : riskAssessment.risk_level === 'MODERATE' ? 'bg-yellow-500' : 'bg-green-500'}`}
+                        style={{ width: `${(riskAssessment.risk_score * 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className={`inline-block px-1.5 py-0.5 rounded-full text-[9px] font-semibold mt-1 ${riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600 bg-red-50' : riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500 bg-red-50' : riskAssessment.risk_level === 'HIGH' ? 'text-orange-600 bg-orange-50' : riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>
+                      {riskAssessment.risk_level}
+                    </div>
+                  </div>
+
+                  {/* Weather Summary */}
+                  <div className="bg-slate-50 rounded-lg p-2">
+                    <h4 className="text-[10px] font-semibold text-slate-700 mb-1">Weather</h4>
+                    <div className="space-y-0.5 text-[10px] text-slate-700">
+                      <div><span className="text-slate-600">Temp:</span> <span className="font-medium ml-1">{telemetry.temperature.toFixed(1)}°C</span></div>
+                      <div><span className="text-slate-600">Rain:</span> <span className="font-medium ml-1">{telemetry.precipitation.toFixed(1)}mm</span></div>
+                      <div><span className="text-slate-600">Humidity:</span> <span className="font-medium ml-1">{telemetry.humidity.toFixed(0)}%</span></div>
+                      <div><span className="text-slate-600">Wind:</span> <span className="font-medium ml-1">{telemetry.wind_speed.toFixed(1)} km/h</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Affected Areas */}
+                <div className="mb-2">
+                  <h4 className="text-[10px] font-semibold text-slate-700 mb-1">Affected Areas</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {(() => {
+                      try {
+                        const areas = typeof riskAssessment.affected_areas === 'string' 
+                          ? JSON.parse(riskAssessment.affected_areas) 
+                          : riskAssessment.affected_areas;
+                        return areas.slice(0, 4).map((area: string, index: number) => (
+                          <span key={index} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-50 text-red-700 text-[10px] rounded">
+                            <span className="w-1 h-1 rounded-full bg-red-500"></span>
+                            {area}
+                          </span>
+                        ));
+                      } catch {
+                        return <span className="text-[10px] text-slate-500">No data</span>;
+                      }
+                    })()}
+                  </div>
+                </div>
+
+                {/* Warning Banner from Risk Assessment */}
+                <WarningBanner
+                  message={riskAssessment.recommended_action}
+                  type={riskAssessment.risk_level === 'CRITICAL' || riskAssessment.risk_level === 'VERY_HIGH' ? 'alert' : riskAssessment.risk_level === 'HIGH' ? 'warning' : 'info'}
+                />
+              </div>
+            )}
+
+            {/* SMS Simulation Panel - compact */}
+            <div className="bg-white rounded-lg border border-slate-200 p-3">
+              <h3 className="text-sm font-semibold text-slate-900 mb-2 flex items-center gap-1.5">
+                <MessageSquare className="w-3 h-3" />
+                SMS Simulation
               </h3>
-              
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Phone Number"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <textarea
-                  placeholder="Alert Message"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors">
-                  <Send className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <input type="text" placeholder="Phone Number (+254...)" className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <textarea placeholder="Alert Message (Swahili)..." rows={2} className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded font-medium text-sm flex items-center justify-center gap-1.5 transition-colors">
+                  <Send className="w-3 h-3" />
                   Send SMS
                 </button>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-600 text-center">Quick Templates:</p>
-                <div className="mt-2 space-y-2 text-xs">
-                  <button className="w-full text-left px-2 py-1 bg-slate-50 hover:bg-slate-100 rounded text-slate-700">
-                    → Flood Warning Template
-                  </button>
-                  <button className="w-full text-left px-2 py-1 bg-slate-50 hover:bg-slate-100 rounded text-slate-700">
-                    → Evacuation Notice
-                  </button>
-                  <button className="w-full text-left px-2 py-1 bg-slate-50 hover:bg-slate-100 rounded text-slate-700">
-                    → All Clear Message
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-500 text-center mt-3">No SMS messages sent yet</p>
             </div>
           </div>
         </div>
 
-        {/* Weather Metrics Section */}
-        {telemetry && riskAssessment && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-lg border border-slate-200 p-6 mb-8"
-          >
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">
-              {selectedLocation} - Weather & Risk Metrics
-            </h3>
-
-            {/* Risk Score and Affected Areas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {/* Risk Score */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Cloud className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-semibold text-slate-900">Risk Score</h4>
-                </div>
-                <div className={`text-4xl font-bold mb-2 ${
-                  riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600' :
-                  riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500' :
-                  riskAssessment.risk_level === 'HIGH' ? 'text-orange-600' :
-                  riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600' :
-                  'text-green-600'
-                }`}>
-                  {(riskAssessment.risk_score * 100).toFixed(1)}%
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all ${
-                      riskAssessment.risk_level === 'CRITICAL' ? 'bg-red-500' :
-                      riskAssessment.risk_level === 'VERY_HIGH' ? 'bg-red-400' :
-                      riskAssessment.risk_level === 'HIGH' ? 'bg-orange-500' :
-                      riskAssessment.risk_level === 'MODERATE' ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${(riskAssessment.risk_score * 100)}%` }}
-                  ></div>
-                </div>
-                <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                  riskAssessment.risk_level === 'CRITICAL' ? 'text-red-600 bg-red-50' :
-                  riskAssessment.risk_level === 'VERY_HIGH' ? 'text-red-500 bg-red-50' :
-                  riskAssessment.risk_level === 'HIGH' ? 'text-orange-600 bg-orange-50' :
-                  riskAssessment.risk_level === 'MODERATE' ? 'text-yellow-600 bg-yellow-50' :
-                  'text-green-600 bg-green-50'
-                }`}>
-                  {riskAssessment.risk_level}
-                </div>
-              </div>
-
-              {/* Affected Areas from Risk Assessment */}
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900 mb-3">Affected Areas</h4>
-                <div className="space-y-2">
-                  {(() => {
-                    try {
-                      const areas = typeof riskAssessment.affected_areas === 'string' 
-                        ? JSON.parse(riskAssessment.affected_areas) 
-                        : riskAssessment.affected_areas;
-                      return areas.map((area: string, index: number) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-                          <span className="text-sm text-slate-700">{area}</span>
-                        </div>
-                      ));
-                    } catch {
-                      return <span className="text-sm text-slate-500">No affected areas data</span>;
-                    }
-                  })()}
-                </div>
-              </div>
-
-              {/* Weather Summary */}
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900 mb-3">Weather Summary</h4>
-                <div className="space-y-2 text-sm text-slate-700">
-                  <div>
-                    <span className="text-slate-600">Temperature:</span>
-                    <span className="font-medium ml-2">{telemetry.temperature.toFixed(1)}°C</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Rainfall:</span>
-                    <span className="font-medium ml-2">{telemetry.precipitation.toFixed(1)}mm</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Humidity:</span>
-                    <span className="font-medium ml-2">{telemetry.humidity.toFixed(0)}%</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-600">Wind Speed:</span>
-                    <span className="font-medium ml-2">{telemetry.wind_speed.toFixed(1)} km/h</span>
-                  </div>
-                </div>
-              </div>
+        {/* Bottom Row: Location Selector + Swahili Message */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          {/* Location Selection */}
+          <div className="bg-white rounded-lg border border-slate-200 p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <MapPin className="w-3 h-3 text-slate-600" />
+              <h3 className="text-sm font-semibold text-slate-900">Select Location</h3>
             </div>
+            <div className="flex flex-wrap gap-1.5">
+              {['Kajiado Central', 'Magadi', 'Loitokitok', 'Namanga', 'Isinya'].map((location) => (
+                <button
+                  key={location}
+                  onClick={() => setSelectedLocation(location)}
+                  className={`px-2.5 py-1 rounded font-medium text-xs transition-all ${
+                    selectedLocation === location
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {location}
+                </button>
+              ))}
+            </div>
+          </div>
 
-            {/* Telemetry Cards Grid - 2x2 */}
+          {/* Swahili Message */}
+          {telemetry && riskAssessment && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ staggerChildren: 0.1 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3"
             >
-              <TelemetryCard
-                icon={<Cloud className="w-6 h-6" />}
-                label="Temperature"
-                value={`${telemetry.temperature.toFixed(1)}°C`}
-                color="blue"
-              />
-              <TelemetryCard
-                icon={<Droplets className="w-6 h-6" />}
-                label="Humidity"
-                value={`${telemetry.humidity.toFixed(0)}%`}
-                color="cyan"
-              />
-              <TelemetryCard
-                icon={<CloudRain className="w-6 h-6" />}
-                label="Rainfall"
-                value={`${telemetry.precipitation.toFixed(1)}mm`}
-                color="cyan"
-              />
-              <TelemetryCard
-                icon={<Wind className="w-6 h-6" />}
-                label="Wind Speed"
-                value={`${telemetry.wind_speed.toFixed(1)}km/h`}
-                color="gray"
-              />
+              <h3 className="text-sm font-bold mb-1.5 text-green-900">
+                📢 Ujumbe wa Afya ya Maji
+              </h3>
+              <div className="text-green-800 text-[11px]">
+                <p className="mb-1">
+                  {riskAssessment.risk_level === 'CRITICAL'
+                    ? '⚠️ ONYO MKUBWA: Hali ya maji ni hatari sana. Jua maji na ujihadari.'
+                    : riskAssessment.risk_level === 'VERY_HIGH'
+                      ? '⚠️ ONYO MKUBWA: Hali hatari. Hamia salama mara moja.'
+                      : riskAssessment.risk_level === 'HIGH'
+                        ? '⚠️ ONYO: Hakuna kulingana. Kuwa na ujihadari kwa mvua hatari.'
+                        : riskAssessment.risk_level === 'MODERATE'
+                          ? '⚠️ ONYO: Kuwa makini. Mvua inaweza kusababisha maafa.'
+                          : '✅ SALAMA: Hali ya maji ni salama. Endelea kukimbilia habari.'}
+                </p>
+                <p className="text-xs text-slate-600">
+                  {new Date(riskAssessment.timestamp).toLocaleString('sw-KE')}
+                </p>
+              </div>
             </motion.div>
-
-            {/* Warning Banner from Risk Assessment */}
-            <WarningBanner
-              message={riskAssessment.recommended_action}
-              type={riskAssessment.risk_level === 'CRITICAL' || riskAssessment.risk_level === 'VERY_HIGH' ? 'alert' : riskAssessment.risk_level === 'HIGH' ? 'warning' : 'info'}
-            />
-          </motion.div>
-        )}
-
-        {/* Location Selection */}
-        <div className="mb-8">
-          <LocationSelector
-            selectedLocation={selectedLocation}
-            onLocationSelect={setSelectedLocation}
-          />
+          )}
         </div>
 
-        {/* Refresh Button */}
-        <div className="text-center mb-12">
+        {/* Refresh Button + Last Update */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-3">
           <button
             onClick={fetchLocationData}
             disabled={loading}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 mx-auto"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded font-medium text-sm transition-colors flex items-center justify-center gap-1.5 mx-auto sm:mx-0"
           >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Data
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
-        </div>
-
-        {/* Swahili Message */}
-        {telemetry && riskAssessment && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-12"
-          >
-            <h3 className="text-lg font-bold mb-3 text-green-900">
-              📢 Ujumbe wa Afya ya Maji (Water Safety Message)
-            </h3>
-            <div className="text-green-800">
-              <p className="mb-2">
-                {riskAssessment.risk_level === 'CRITICAL'
-                  ? '⚠️ ONYO MKUBWA: Hali ya maji ni hatari sana. Jua maji yenyewe katika nyumba yako na ujihadari.'
-                  : riskAssessment.risk_level === 'VERY_HIGH'
-                    ? '⚠️ ONYO MKUBWA: Hali ya maji ni hatari sana. Hamia salama mara moja.'
-                    : riskAssessment.risk_level === 'HIGH'
-                      ? '⚠️ ONYO: Hakuna kulingana. Kuwa na ujihadari kwa sababu ya mvua inayoweza kuwa na hatari.'
-                      : riskAssessment.risk_level === 'MODERATE'
-                        ? '⚠️ ONYO: Kuwa makini. Mvua inaweza kusababisha maafa.'
-                        : '✅ SALAMA: Hali ya maji ni salama kwa sasa. Endelea kusoma habari za sasa.'}
-              </p>
-              <p className="text-sm text-slate-600">
-                Sasa: {new Date(riskAssessment.timestamp).toLocaleString('sw-KE')}
-              </p>
+          {lastFetch && (
+            <div className="text-center text-[10px] text-slate-500">
+              Last updated: {lastFetch.toLocaleTimeString()}
             </div>
-          </motion.div>
-        )}
-
-        {/* Last Update */}
-        {lastFetch && (
-          <div className="text-center text-xs text-slate-500 mb-8">
-            Last updated: {lastFetch.toLocaleTimeString()}
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Footer */}
