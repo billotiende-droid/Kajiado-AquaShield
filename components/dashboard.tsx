@@ -412,12 +412,21 @@ export default function Dashboard() {
               <div>
                 <h4 className="text-sm font-semibold text-slate-900 mb-3">Affected Areas</h4>
                 <div className="space-y-2">
-                  {riskAssessment.affected_areas.map((area, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-                      <span className="text-sm text-slate-700">{area}</span>
-                    </div>
-                  ))}
+                  {(() => {
+                    try {
+                      const areas = typeof riskAssessment.affected_areas === 'string' 
+                        ? JSON.parse(riskAssessment.affected_areas) 
+                        : riskAssessment.affected_areas;
+                      return areas.map((area: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+                          <span className="text-sm text-slate-700">{area}</span>
+                        </div>
+                      ));
+                    } catch {
+                      return <span className="text-sm text-slate-500">No affected areas data</span>;
+                    }
+                  })()}
                 </div>
               </div>
 
