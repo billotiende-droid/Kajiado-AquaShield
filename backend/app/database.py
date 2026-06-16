@@ -128,8 +128,16 @@ def insert_sms_alert(recipient: str, message: str, location: str, risk_level: st
     conn.close()
     return record_id
 
+def _resolve_location(location: str) -> str:
+    if location == "Kajiado Central":
+        return location
+    if location == "Kajiado":
+        return "Kajiado Central"
+    return location
+
 def get_latest_weather(location: str, limit: int = 10) -> List[Dict]:
     """Get latest weather data for a location."""
+    location = _resolve_location(location)
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -147,6 +155,7 @@ def get_latest_weather(location: str, limit: int = 10) -> List[Dict]:
 
 def get_latest_risk_assessment(location: str) -> Optional[Dict]:
     """Get latest risk assessment for a location."""
+    location = _resolve_location(location)
     conn = get_connection()
     cursor = conn.cursor()
     
