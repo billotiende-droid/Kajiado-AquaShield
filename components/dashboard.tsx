@@ -90,6 +90,7 @@ export default function Dashboard() {
   const [smsStatus, setSmsStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+  const apiUrl = `${apiBaseUrl.replace(/\/$/, '').replace(/\/api\/v1$/, '')}/api/v1`
 
   // Fetch weather and risk data for selected location
   const fetchLocationData = useCallback(async () => {
@@ -98,8 +99,8 @@ export default function Dashboard() {
       setError(null)
       
       const [riskRes, weatherRes] = await Promise.all([
-        axios.get(`${apiBaseUrl}/api/risk/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
-        axios.get(`${apiBaseUrl}/api/weather/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
+        axios.get(`${apiUrl}/risk/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
+        axios.get(`${apiUrl}/telemetry/${encodeURIComponent(selectedLocation)}`, { timeout: 5000 }),
       ])
       
       const riskData = riskRes.data.risk_assessment
@@ -126,27 +127,27 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }, [apiBaseUrl, selectedLocation])
+  }, [apiUrl, selectedLocation])
 
   // Fetch alert logs
   const fetchAlertLogs = useCallback(async () => {
     try {
-      const response = await axios.get(`${apiBaseUrl}/api/sms/alerts`, { timeout: 5000 })
+      const response = await axios.get(`${apiUrl}/sms/alerts`, { timeout: 5000 })
       setAlertLogs(response.data.alerts || [])
     } catch (err: any) {
       console.error('Failed to fetch alert logs:', err)
     }
-  }, [apiBaseUrl])
+  }, [apiUrl])
 
   // Fetch dashboard summary
   const fetchDashboardSummary = useCallback(async () => {
     try {
-      const response = await axios.get(`${apiBaseUrl}/api/dashboard/summary`, { timeout: 5000 })
+      const response = await axios.get(`${apiUrl}/dashboard/summary`, { timeout: 5000 })
       setDashboardSummary(response.data)
     } catch (err: any) {
       console.error('Failed to fetch dashboard summary:', err)
     }
-  }, [apiBaseUrl])
+  }, [apiUrl])
 
   // Initial fetch
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function Dashboard() {
     try {
       setSmsLoading(true)
       setSmsStatus(null)
-      await axios.post(`${apiBaseUrl}/api/sms/alert`, {
+      await axios.post(`${apiUrl}/sms/alert`, {
         recipient: smsPhone,
         message: smsMessage,
         location: selectedLocation,
