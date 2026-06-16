@@ -552,23 +552,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-
-        {/* Refresh Button + Last Update */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-3">
-          <button
-            onClick={fetchLocationData}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded font-medium text-sm transition-colors flex items-center justify-center gap-1.5 mx-auto sm:mx-0"
-          >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-          {lastFetch && (
-            <div className="text-center text-[10px] text-slate-500">
-              Last updated: {lastFetch.toLocaleTimeString()}
-            </div>
-          )}
-        </div>
       </main>
 
       {/* Footer */}
