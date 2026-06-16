@@ -25,4 +25,4 @@ class AlertUpdate(BaseModel):
 
 class WeatherAPIRequest(BaseModel):
     api_key: Optional[str] = None
-    location: str = "Kajiado"
+    location: str = "Kajiado Central"
