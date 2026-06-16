@@ -1,9 +1,8 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "rootDirectory": "backend",
-    "watchPatterns": ["backend/**/*"]
+    "builder": "RAILPACK",
+    "watchPatterns": ["**/*"]
   },
   "deploy": {
     "startCommand": "python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT",
@@ -11,3 +10,4 @@
     "restartPolicyWindow": 60
   }
 }
+
