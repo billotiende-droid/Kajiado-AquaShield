@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from .database import init_database # Keep this import
+from .database import init_database, seed_initial_data
 from . import weather, risk, alerts, dashboard # Corrected import for routers
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     init_database()
+    seed_initial_data()
 
 @app.get("/health")
 def health_check():
