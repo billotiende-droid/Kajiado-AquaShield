@@ -137,38 +137,38 @@ def _resolve_location(location: str) -> str:
 
 def get_latest_weather(location: str, limit: int = 10) -> List[Dict]:
     """Get latest weather data for a location."""
-    location = _resolve_location(location)
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
+    canonical = _resolve_location(location)
+    fallback = "Kajiado" if canonical == "Kajiado Central" else ("Kajiado Central" if canonical == "Kajiado" else None)
+    candidates = [canonical] + ([fallback] if fallback else [])
+    placeholders = ",".join("?" * len(candidates))
+    cursor.execute(f"""
         SELECT * FROM weather_data 
-        WHERE location = ? 
+        WHERE location IN ({placeholders}) 
         ORDER BY timestamp DESC 
         LIMIT ?
-    """, (location, limit))
-    
+    """, (*candidates, limit))
     rows = cursor.fetchall()
     conn.close()
-    
     return [dict(row) for row in rows]
 
 def get_latest_risk_assessment(location: str) -> Optional[Dict]:
     """Get latest risk assessment for a location."""
-    location = _resolve_location(location)
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
+    canonical = _resolve_location(location)
+    fallback = "Kajiado" if canonical == "Kajiado Central" else ("Kajiado Central" if canonical == "Kajiado" else None)
+    candidates = [canonical] + ([fallback] if fallback else [])
+    placeholders = ",".join("?" * len(candidates))
+    cursor.execute(f"""
         SELECT * FROM risk_assessments 
-        WHERE location = ? 
+        WHERE location IN ({placeholders}) 
         ORDER BY timestamp DESC 
         LIMIT 1
-    """, (location,))
-    
+    """, tuple(candidates))
     row = cursor.fetchone()
     conn.close()
-    
     return dict(row) if row else None
 
 def get_sms_alerts(location: str = None, limit: int = 50) -> List[Dict]:
