@@ -16,6 +16,7 @@ export default function AlertSimulator({
   apiBaseUrl,
   onAlertSimulated,
 }: AlertSimulatorProps) {
+  const apiUrl = `${apiBaseUrl.replace(/\/$/, '').replace(/\/api\/v1$/, '')}/api/v1`
   const [smsMessage, setSmsMessage] = useState('🚨 ONYO: Maji yanazidi kwa Kajiado. Jua mafuta yako na utulie.')
   const [smsPhone, setSmsPhone] = useState('+254XXXXXXXXX')
   const [webhookPayload, setWebhookPayload] = useState(
@@ -42,7 +43,7 @@ export default function AlertSimulator({
 
     try {
       setLoading(true)
-      await axios.post(`${apiBaseUrl}/api/sms/alert`, {
+      await axios.post(`${apiUrl}/sms/alert`, {
         recipient: smsPhone,
         message: smsMessage,
         location: 'Kajiado Central',
@@ -77,7 +78,7 @@ export default function AlertSimulator({
         return
       }
 
-      await axios.post(`${apiBaseUrl}/api/sms/alert`, {
+      await axios.post(`${apiUrl}/sms/alert`, {
         ...payload,
         recipient: payload.recipient || 'webhook',
         location: payload.location || 'Kajiado Central',
