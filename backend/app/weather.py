@@ -4,9 +4,26 @@ from .schemas import WeatherData, WeatherAPIRequest
 from .database import insert_weather_data, get_latest_weather, insert_risk_assessment, insert_sms_alert
 from .risk_engine import analyze_risk
 
-router = APIRouter(prefix="/weather", tags=["weather"])
+router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 
-@router.post("")
+@router.get("")
+def get_current_telemetry(location: str = "Kajiado"):
+    try:
+        data = get_latest_weather(location, limit=1)
+        if not data:
+            raise HTTPException(status_code=404, detail="No telemetry data found")
+        return data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/history")
+def get_telemetry_history(location: str = "Kajiado", limit: int = 20):
+    try:
+        return get_latest_weather(location, limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/submit")
 def submit_weather(weather: WeatherData):
     try:
         weather_id = insert_weather_data(weather.location, weather.dict())
