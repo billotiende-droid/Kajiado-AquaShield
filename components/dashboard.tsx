@@ -379,6 +379,29 @@ export default function Dashboard() {
                   <Send className="w-4 h-4" />
                   {smsLoading ? 'Sending...' : 'Send SMS Alert'}
                 </button>
+
+                {/* Location Selector */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <MapPin className="w-4 h-4 text-slate-600" />
+                    <h4 className="text-sm font-semibold text-slate-900">Select Location</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {['Kajiado Central', 'Magadi', 'Loitokitok', 'Namanga', 'Isinya'].map((location) => (
+                      <button
+                        key={location}
+                        onClick={() => setSelectedLocation(location)}
+                        className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                          selectedLocation === location
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {location}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
