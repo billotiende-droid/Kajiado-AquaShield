@@ -303,8 +303,8 @@ Set `NEXT_PUBLIC_API_BASE_URL` to your Railway backend URL.
 
 ```env
 # Stormglass.io weather API
-WEATHER_AI_ENDPOINT=https://api.stormglass.io/v2/weather/point
-WEATHER_AI_KEY=8b9ac9a2-6998-11f1-9993-0242ac120004-8b9aca60-6998-11f1-9993-0242ac120004
+WEATHER_AI_ENDPOINT=
+WEATHER_AI_KEY=
 
 # SQLite database path (ephemeral on Railway)
 DATABASE_PATH=/tmp/aquashield.db
@@ -321,7 +321,7 @@ PORT=8000
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 # For production:
-# NEXT_PUBLIC_API_BASE_URL=https://your-railway-app.railway.app
+# NEXT_PUBLIC_API_BASE_URL=
 ```
 
 ---
