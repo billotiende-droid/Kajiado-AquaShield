@@ -7,7 +7,7 @@ from .risk_engine import analyze_risk
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 
 @router.get("")
-def get_current_telemetry(location: str = "Kajiado"):
+def get_current_telemetry(location: str = "Kajiado Central"):
     try:
         data = get_latest_weather(location, limit=1)
         if not data:
@@ -17,7 +17,7 @@ def get_current_telemetry(location: str = "Kajiado"):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/history")
-def get_telemetry_history(location: str = "Kajiado", limit: int = 20):
+def get_telemetry_history(location: str = "Kajiado Central", limit: int = 20):
     try:
         return get_latest_weather(location, limit)
     except Exception as e:
