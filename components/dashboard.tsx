@@ -343,7 +343,7 @@ export default function Dashboard() {
                     onChange={(e) => setSmsMessage(e.target.value)}
                     rows={3}
                     placeholder="Enter alert message in Swahili..."
-                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                    className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
                       isOverLimit ? 'border-red-300' : 'border-slate-300'
                     }`}
                     maxLength={160}
