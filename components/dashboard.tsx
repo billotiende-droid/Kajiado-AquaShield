@@ -424,15 +424,7 @@ export default function Dashboard() {
 
             {/* Active Alerts */}
             <div className="bg-white rounded-lg border border-slate-200 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-slate-900">Active Alerts</h3>
-                <button
-                  onClick={fetchAlertLogs}
-                  className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Refresh
-                </button>
-              </div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-2">Active Alerts</h3>
               {alertLogs.length === 0 ? (
                 <div className="text-center py-4 text-slate-500">
                   <AlertTriangle className="w-5 h-5 mx-auto mb-1 opacity-30" />
