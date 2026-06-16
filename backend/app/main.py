@@ -4,6 +4,7 @@ AquaShield FastAPI Backend - Main Orchestrator
 from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from .database import init_database # Keep this import
 from . import weather, risk, alerts, dashboard # Corrected import for routers
 
@@ -33,24 +34,14 @@ def health_check():
         "service": "AquaShield Backend"
     }
 
-@app.get("/")
-def read_root():
-    return {
-        "name": "AquaShield",
-        "endpoints": {
-            "health": "/health",
-            "weather": "/api/weather",
-            "risk": "/api/risk",
-            "sms": "/api/sms",
-            "dashboard": "/api/dashboard"
-        },
-        "docs": "/docs"
-    }
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")
 
-app.include_router(weather.router, prefix="/api")
-app.include_router(risk.router, prefix="/api")
-app.include_router(alerts.router, prefix="/api")
-app.include_router(dashboard.router, prefix="/api")
+app.include_router(weather.router, prefix="/api/v1")
+app.include_router(risk.router, prefix="/api/v1")
+app.include_router(alerts.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
